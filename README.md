@@ -1,4 +1,3 @@
-# DeepFm
 # Tips:
 ## 1.Embedding Regulation
 regularize specific embeddings whose id appear in current batch of data  
