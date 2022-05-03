@@ -1,6 +1,6 @@
-from re import A
 import tensorflow as tf
-from deepfm import deepFm
+from dnn import deepFM
+import json
 from tensorflow.python.framework import sparse_tensor as sparse_tensor_lib
 from tensorflow.python.framework import dtypes
 from tensorflow.python.ops import math_ops
@@ -129,7 +129,7 @@ def model_fn(features,labels,mode,params):
         if not isinstance(featvalues, tf.SparseTensor):
             raise TypeError("feature[{}] isn't SparseTensor".format(featname))
         
-    model = deepFm()
+    model = deepFM()
     model.add_weights(params)
     
     linear_logits = model.output_logits_from_linear(features,params)
@@ -183,12 +183,15 @@ def model_fn(features,labels,mode,params):
     
 def get_hparams():
   vocab_sizes = {}
-  dict_size = [507, 289, 25, 7, 569, 36, 2, 408, 576, 239, 558, 22, 552, 274, 9, 420, 124, 4, 253, 7, 12, 288, 30, 188]
+  # 读入dict_size
+  with open('list.json', 'r') as f:
+    dict_size= json.load(f)
+  # dict_size = [507, 289, 25, 7, 569, 36, 2, 408, 576, 239, 558, 22, 552, 274, 9, 420, 124, 4, 253, 7, 12, 288, 30, 188]
   for i in range(1,14):
     vocab_sizes['I{}'.format(i)] = 11
-  vocab_sizes['multi_feats'] = dict_size[0]+5
+  vocab_sizes['multi_feats'] = dict_size['multi_feats']+5
   for i in range(4,24):
-    vocab_sizes['C{}'.format(i)] = dict_size[i-3]+5
+    vocab_sizes['C{}'.format(i)] = dict_size['C{}'.format(i)]+5
     
   field_vocab_mapping = {}
   for name, _ in COLUMNS_MAX_TOKENS:
@@ -203,7 +206,7 @@ def get_hparams():
     # 在这个case中，没有多个field共享同一个vocab的情况，而且field_name和vocab_name相同
     'field_vocab_mapping': field_vocab_mapping,
     'dropout_rate': 0.3,
-    'batch_norm': False,
+    'batch_norm': True,
     'hidden_units': [128, 64],
     'optimizer': optimizer
   }
@@ -218,17 +221,17 @@ if __name__ == "__main__":
   
   estimator = tf.estimator.Estimator(model_fn=model_fn, model_dir='models\criteo', params=params,config=run_config)
   
-  train_spec = tf.estimator.TrainSpec(input_fn=lambda: input_fn(data_file='dataset/_train.csv',
+  train_spec = tf.estimator.TrainSpec(input_fn=lambda: input_fn(data_file='dataset\_train.csv',
                                                                 n_repeat=10,
-                                                                batch_size=1024,
+                                                                batch_size=64,
                                                                 batches_per_shuffle=10),
                                       max_steps=4096)
 
-  eval_spec = tf.estimator.EvalSpec(input_fn=lambda: input_fn(data_file='dataset/_test.csv',
+  eval_spec = tf.estimator.EvalSpec(input_fn=lambda: input_fn(data_file='dataset\_test.csv',
                                                                 n_repeat=1,
                                                                 batch_size=1024,
                                                                 batches_per_shuffle=-1),
-                                    # steps=50,            # 评估的迭代步数，如果为None，则在整个数据集上评估。
+                                    steps=50,            # 评估的迭代步数，如果为None，则在整个数据集上评估。
                                     start_delay_secs=5,    #start evaluating after N seconds
                                     throttle_secs=120)     #evaluate every N seconds
 
@@ -236,4 +239,3 @@ if __name__ == "__main__":
   
 # --host=127.0.0.1
 # tensorboard logdir是一个目录
-# repeat(1)等于不重复

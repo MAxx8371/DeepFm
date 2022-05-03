@@ -3,6 +3,7 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from tqdm import tqdm
 import os
+import json
 
 class DataPreprocessor:
   def __init__(self):
@@ -12,7 +13,7 @@ class DataPreprocessor:
     self._single_cols_category = ['C{}'.format(idx) for idx in range(4,27)]
     # self._single_cols_category = ['C5']
     
-    df = pd.read_csv("criteo_sampled_data.csv")
+    df = pd.read_csv("./criteo_sampled_data.csv")
     # df = pd.read_csv("E:\DeepFM\demo.csv")
     # df.columns = ['label'] + self._cols_int + self._multi_cols_category + self._single_cols_category
     
@@ -42,16 +43,17 @@ class DataPreprocessor:
     # 既然不能用zero mean,unit variance scaling，因为那样会破坏数据的稀疏性
     # 最简单的就是用min-max-scaling
     # 理论做法，应该先split train and test，再做scaling
-    # 这里就不那么讲究了，差别也没有那么大
     # (因为numeric_features不是ndarray，没有被minmax_scale inplace modify的可能性，也就没设置copy=False)
     # col_min = numeric_features.min()
     # col_max = numeric_features.max()
     # numeric_features = (numeric_features - col_min) / (col_max - col_min)
     
+    #对数值特征进行离散化
     labels = ['{}'.format(i) for i in range(1,11)]
     for name in self._cols_int:
       _, binedge = pd.cut(numeric_features[name].dropna(),10,retbins=True)
-      discreted_feat = pd.cut(numeric_features[name],binedge,labels=labels).cat.add_categories([0])
+      # discreted_feat = pd.cut(numeric_features[name],binedge,labels=labels).cat.add_categories([0])
+      discreted_feat = pd.cut(numeric_features[name],binedge,labels=labels)
       # numeric_features[name].to_csv("dataset\demo.csv")
       # discreted_feat.to_csv("dataset\demo.csv")
       numeric_features[name] = discreted_feat
@@ -60,6 +62,8 @@ class DataPreprocessor:
   
   def _build_catval_vocab(self,min_occur):    #构建vocab [multi_cal, ...single_cal...]
     tag2idx = []
+    dict_size = {}
+
     vocab = []
     for c in self._multi_cols_category:
         cat_counts = self._X[c].value_counts()        #记录在一列中出现过的tag以及tag出现的次数
@@ -68,6 +72,7 @@ class DataPreprocessor:
         vocab.extend('{}/{}'.format(c,tag) for tag in valid_catcounts.index)  
         # idx从1开始计数，1号位置为'罕见的tag'(出现不足min_occur次)预留, 0号位置留给Nan值
     tag2idx.append({tag:idx for idx,tag in enumerate(vocab,start=2)})
+    dict_size["multi_feats"] = len(vocab)
         
     for c in self._single_cols_category:
       vocab = []
@@ -76,7 +81,13 @@ class DataPreprocessor:
       vocab.extend('{}/{}'.format(c,tag) for tag in valid_catcounts.index)
       
       tag2idx.append({tag:idx for idx,tag in enumerate(vocab,start=2)})
-    
+      dict_size[c] = len(vocab)
+
+    #dict_size写入json
+    with open('./list.json','w') as f:
+      json.dump(dict_size,f)
+      f.close()
+
     return tag2idx
   
   # def _transform_numerical_row(self, row, idx):
@@ -116,7 +127,7 @@ class DataPreprocessor:
     return ",".join(txts)
   
   def run(self,int_upper_bound,cat_min_occur):
-    #qcut后为categorical类型,到导致处理速度缓慢
+    #qcut后为categorical类型,导致处理速度缓慢
     normed_numeric_feats = self._normalize_numerics(int_upper_bound)
     self._proproced_df['label'] = self._y
 
