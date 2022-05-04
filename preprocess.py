@@ -13,7 +13,7 @@ class DataPreprocessor:
     self._single_cols_category = ['C{}'.format(idx) for idx in range(4,27)]
     # self._single_cols_category = ['C5']
     
-    df = pd.read_csv("./criteo_sampled_data.csv")
+    df = pd.read_csv("../criteo_sampled_data.csv")
     # df = pd.read_csv("E:\DeepFM\demo.csv")
     # df.columns = ['label'] + self._cols_int + self._multi_cols_category + self._single_cols_category
     
@@ -103,7 +103,7 @@ class DataPreprocessor:
     txts = []
     value = row[idx]
     
-    if value is '':
+    if value == '':
       return ",".join(txts)
     
     # cat = "{}/{}".format(idx,value)
@@ -161,11 +161,11 @@ class DataPreprocessor:
     
     train_df,test_df = train_test_split(df,test_size=test_ratio)
     
-    out_dir = "./dataset/_train.csv"
+    out_dir = "../dataset/_train.csv"
     train_df.to_csv(out_dir,sep='\t',index=False)
     # df.to_csv(out_dir,sep='\t',index=False)
     
-    out_dir = "./dataset/_test.csv"
+    out_dir = "../dataset/_test.csv"
     test_df.to_csv(out_dir,sep='\t',index=False)
         
 if __name__ == "__main__":

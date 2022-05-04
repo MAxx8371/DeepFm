@@ -219,15 +219,15 @@ if __name__ == "__main__":
   run_config = tf.estimator.RunConfig(save_checkpoints_secs=120,
                                       keep_checkpoint_max=3)
   
-  estimator = tf.estimator.Estimator(model_fn=model_fn, model_dir='models\criteo', params=params,config=run_config)
+  estimator = tf.estimator.Estimator(model_fn=model_fn, model_dir='../models/criteo', params=params,config=run_config)
   
-  train_spec = tf.estimator.TrainSpec(input_fn=lambda: input_fn(data_file='dataset\_train.csv',
+  train_spec = tf.estimator.TrainSpec(input_fn=lambda: input_fn(data_file='../dataset/_train.csv',
                                                                 n_repeat=10,
                                                                 batch_size=64,
                                                                 batches_per_shuffle=10),
                                       max_steps=4096)
 
-  eval_spec = tf.estimator.EvalSpec(input_fn=lambda: input_fn(data_file='dataset\_test.csv',
+  eval_spec = tf.estimator.EvalSpec(input_fn=lambda: input_fn(data_file='../dataset/_test.csv',
                                                                 n_repeat=1,
                                                                 batch_size=1024,
                                                                 batches_per_shuffle=-1),
